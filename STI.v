@@ -1,3 +1,7 @@
+/*
+將 16 位元的並列資料 (Parallel Data)，依照不同的長度與格式設定，轉換為串列資料 (Serial Data) 輸出
+*/
+
 module STI(
     input            clk, reset,  // active high asynchronous
     input            load, pi_msb, pi_low, pi_end,
@@ -19,9 +23,17 @@ module STI(
     reg [15:0] data;
     reg [31:0] data_o;
 
-    // 優化：直接用 wire 取代原本的 bits (Sequential) 和 idx 
-    // 觀察二進制，7 是 00111，15 是 01111，23 是 10111，31 是 11111
-    // 會發現後三位固定是 111，前兩位剛好就是 pi_length
+/*
+    優化：
+    觀察二進制的規律，7 是 00111，15 是 01111，23 是 10111，31 是 11111
+    會發現後三位固定是 111，前兩位剛好就是 pi_length
+
+    直接用 max_bits = {pi_length, 3'b111}; 來組合 ：
+    pi_length 為 00 (8-bit) 變成 00111 (十進位 7) 
+    pi_length 為 01 (16-bit)變成 01111 (十進位 15) 
+    pi_length 為 11 (32-bit)變成 11111 (十進位 31) 
+    節省硬體資源 
+*/
     wire [4:0] max_bits = {pi_length, 3'b111}; 
 
     //-----------------------------------------------------------------
@@ -40,13 +52,11 @@ module STI(
             IDLE:    next_state = load ? READ : IDLE;
             READ:    next_state = CAL;
             CAL:     next_state = OUTPUT;
-            OUTPUT: begin 
-                // 優化：精簡狀態跳轉邏輯
+            OUTPUT:
                 if (cnt == max_bits)
                     next_state = pi_end ? FINISH : IDLE;
                 else
                     next_state = OUTPUT;
-            end
             FINISH:  next_state = FINISH;
             default: next_state = IDLE;
         endcase
@@ -99,6 +109,7 @@ module STI(
     // Output Assignments
     //-----------------------------------------------------------------
     wire [4:0] bit_idx;
+    //bit_idx 會根據 pi_msb 決定是倒著數 (max_bits - cnt) 還是正著數 (cnt) 
     assign bit_idx  = pi_msb ? (max_bits - cnt) : cnt;
     
     assign so_data  = data_o[bit_idx];
