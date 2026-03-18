@@ -106,7 +106,7 @@ module DAC(
         end else if (state == S_PAD && pad_tick == 1'b1) begin
             wr_en <= 1'b1;  // 情況 B：補零模式且時脈到位，觸發寫入
         end else begin
-            wr_en <= 1'b0;  // 預設不寫入 (取代你原本寫在最上面的 wr_en <= 1'b0)
+            wr_en <= 1'b0;  // 預設不寫入 
         end
     end
 
@@ -135,7 +135,7 @@ module DAC(
     wire [1:0] bank_select = cnt_mem[7:6]; 
 
     // 利用位元特性判斷要寫入 Odd 還是 Even
-    wire is_odd = (cnt_mem[3] == cnt_mem[0]); // Checkerboard 交錯演算法
+    wire is_odd = (cnt_mem[3] == cnt_mem[0]); 
 
     always @(*) begin
         {odd4_wr, odd3_wr, odd2_wr, odd1_wr}     = 4'b0000;
@@ -169,6 +169,6 @@ module DAC(
     always @(posedge clk or posedge reset) begin
         if (reset) oem_finish <= 1'b0;
         // 當寫到第 255 筆 (8'hFF) 
-        else       oem_finish <= (cnt_mem == 8'hFF && wr_en);  // 最後一筆寫完當下發出
+        else       oem_finish <= (cnt_mem == 8'hFF && wr_en);  
     end
 endmodule
